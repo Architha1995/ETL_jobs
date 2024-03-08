@@ -6,6 +6,6 @@ dbt_project:
       host: localhost
       port: 5433
       user: postgres
-      pass: Parvathy@1
+      pass: adminpostgres
       dbname: postgres
       schema: public
