@@ -28,4 +28,11 @@ merge_char_locations.sql is a DBT model(dbt_project>model>rickandmorty) which cr
 
 ### Set up
 
+Apache Airflow
+1. Initialize the Airflow database with `airflow db init`
+2. Start the web server with `airflow webserver -p 8080`
+3. In a new terminal, start the scheduler with `airflow scheduler`
+4. Open localhost:8080 in your browser to access the Airflow UI.
+5. Place your DAG files in the dags folder within the AIRFLOW_HOME directory.
+6. Trigger the Dag from airflow UI and observe the graph.
 
