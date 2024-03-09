@@ -39,6 +39,7 @@ def fetch_data_from_api(endpoint, **kwargs):
     ti = kwargs["ti"]
     url = f"https://rickandmortyapi.com/api/{endpoint}"
     try:
+        # Added this to avoid proxy issues of accessing the API
         session = requests.Session()
         session.trust_env = False
         response = session.get(url, timeout=30)
