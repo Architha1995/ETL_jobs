@@ -42,12 +42,14 @@ def fetch_data_from_api(endpoint, **kwargs):
     try:
         while True:
             url = f"https://rickandmortyapi.com/api/{endpoint}?page={page_num}"
+            # Added this to avoid proxy issues of accessing the API
             session = requests.Session()
             session.trust_env = False
             response = session.get(url, timeout=30)
             if response.status_code == 200:
                 data = response.json()["results"]
                 item_list.append(data)
+                # checking if the last page has reached
                 if response.json()["info"]["next"] == None:
                     break
             else:
