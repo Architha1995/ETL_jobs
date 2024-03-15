@@ -37,14 +37,27 @@ def create_table(connection, create_table_sql):
 def fetch_data_from_api(endpoint, **kwargs):
     """Returns a list of dictionary items from the rick and morty API response"""
     ti = kwargs["ti"]
-    url = f"https://rickandmortyapi.com/api/{endpoint}"
+    item_list = []
+    page_num = 1
     try:
-        # Added this to avoid proxy issues of accessing the API
-        session = requests.Session()
-        session.trust_env = False
-        response = session.get(url, timeout=30)
-        data = response.json()["results"]
-        ti.xcom_push("data", data)
+        while True:
+            url = f"https://rickandmortyapi.com/api/{endpoint}?page={page_num}"
+            session = requests.Session()
+            session.trust_env = False
+            response = session.get(url, timeout=30)
+            if response.status_code == 200:
+                data = response.json()["results"]
+                item_list.append(data)
+                if response.json()["info"]["next"] == None:
+                    break
+            else:
+                print(
+                    "Unable to get data items. Response status code: ",
+                    response.status_code,
+                )
+                print(response.reason)
+            page_num += 1
+        ti.xcom_push("item_list", item_list)
     except:
         print("error occurred while fetching data")
         raise Exception("Failed to fetch data")
@@ -53,54 +66,57 @@ def fetch_data_from_api(endpoint, **kwargs):
 def preprocess_data_char(**kwargs):
     """Returns a processed list of dictionary items after mapping the columns for character table"""
     ti = kwargs["ti"]
-    char_dict_list = ti.xcom_pull(task_ids="fetch_characters", key="data")
-    print(char_dict_list)
+    char_dict_full_items = ti.xcom_pull(task_ids="fetch_characters", key="item_list")
     processed_char_dict_list = []
-    for i in range(len(char_dict_list)):
-        for key, value in char_dict_list[i].items():
-            if value is None:
-                char_dict_list[key] = ""
-        processed_dict = {}
-        processed_dict = {
-            "character_id": char_dict_list[i]["id"],
-            "character_name": char_dict_list[i]["name"],
-            "character_status": char_dict_list[i]["status"],
-            "character_species": char_dict_list[i]["species"],
-            "character_type": char_dict_list[i]["type"],
-            "character_gender": char_dict_list[i]["gender"],
-            "character_origin_name": char_dict_list[i]["origin"]["name"],
-            "character_origin_url": char_dict_list[i]["origin"]["url"],
-            "character_location_name": char_dict_list[i]["location"]["name"],
-            "character_location_url": char_dict_list[i]["location"]["url"],
-            "character_image": char_dict_list[i]["image"],
-            "character_episodes": char_dict_list[i]["episode"],
-            "character_url": char_dict_list[i]["url"],
-            "character_created": char_dict_list[i]["created"],
-        }
-        processed_char_dict_list.append(processed_dict)
+    for j in range(len(char_dict_full_items)):
+        char_dict_list = char_dict_full_items[j]
+        for i in range(len(char_dict_list)):
+            for key, value in char_dict_list[i].items():
+                if value is None:
+                    char_dict_list[key] = ""
+            processed_dict = {}
+            processed_dict = {
+                "character_id": char_dict_list[i]["id"],
+                "character_name": char_dict_list[i]["name"],
+                "character_status": char_dict_list[i]["status"],
+                "character_species": char_dict_list[i]["species"],
+                "character_type": char_dict_list[i]["type"],
+                "character_gender": char_dict_list[i]["gender"],
+                "character_origin_name": char_dict_list[i]["origin"]["name"],
+                "character_origin_url": char_dict_list[i]["origin"]["url"],
+                "character_location_name": char_dict_list[i]["location"]["name"],
+                "character_location_url": char_dict_list[i]["location"]["url"],
+                "character_image": char_dict_list[i]["image"],
+                "character_episodes": char_dict_list[i]["episode"],
+                "character_url": char_dict_list[i]["url"],
+                "character_created": char_dict_list[i]["created"],
+            }
+            processed_char_dict_list.append(processed_dict)
     ti.xcom_push("processed_char_dict_list", processed_char_dict_list)
 
 
 def preprocess_data_location(**kwargs):
     """Returns a processed list of dictionary items after mapping the columns for location table"""
     ti = kwargs["ti"]
-    loc_dict_list = ti.xcom_pull(task_ids="fetch_locations", key="data")
+    loc_dict_full_items = ti.xcom_pull(task_ids="fetch_locations", key="item_list")
     processed_loc_dict_list = []
-    for i in range(len(loc_dict_list)):
-        for key, value in loc_dict_list[i].items():
-            if value is None:
-                loc_dict_list[key] = ""
-        processed_dict = {}
-        processed_dict = {
-            "location_id": loc_dict_list[i]["id"],
-            "location_name": loc_dict_list[i]["name"],
-            "location_type": loc_dict_list[i]["type"],
-            "location_dimension": loc_dict_list[i]["dimension"],
-            "location_residents": loc_dict_list[i]["residents"],
-            "location_url": loc_dict_list[i]["url"],
-            "location_created": loc_dict_list[i]["created"],
-        }
-        processed_loc_dict_list.append(processed_dict)
+    for j in range(len(loc_dict_full_items)):
+        loc_dict_list = loc_dict_full_items[j]
+        for i in range(len(loc_dict_list)):
+            for key, value in loc_dict_list[i].items():
+                if value is None:
+                    loc_dict_list[key] = ""
+            processed_dict = {}
+            processed_dict = {
+                "location_id": loc_dict_list[i]["id"],
+                "location_name": loc_dict_list[i]["name"],
+                "location_type": loc_dict_list[i]["type"],
+                "location_dimension": loc_dict_list[i]["dimension"],
+                "location_residents": loc_dict_list[i]["residents"],
+                "location_url": loc_dict_list[i]["url"],
+                "location_created": loc_dict_list[i]["created"],
+            }
+            processed_loc_dict_list.append(processed_dict)
     ti.xcom_push("processed_loc_dict_list", processed_loc_dict_list)
 
 
